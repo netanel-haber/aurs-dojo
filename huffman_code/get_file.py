@@ -1,6 +1,6 @@
 from os import path
 
-def get_file():
-    location = path.dirname(path.abspath(__file__)) 
-    with open(path.join(location, "raw.txt")) as f:
+location = path.dirname(path.abspath(__file__))
+def get_file(): 
+    with open(path.join(location, "raw.html")) as f:
         return f.read() 
