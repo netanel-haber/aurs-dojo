@@ -86,12 +86,26 @@ def decode_yoav(byte_arr: bytes, code: dict) -> Generator[str, None, None]:
     sorted_str_reps = [pair[0] for pair in str_rep_chars]
     rep_lengths = [len(rep) for rep in sorted_str_reps]
     chars = [pair[1] for pair in str_rep_chars]
-    longest_str_rep_len = len(max(sorted_str_reps, key=len))
-    bin_text = hydrate_text(byte_arr)
-    idx = 0
-    while next_code := bin_text[idx : idx + longest_str_rep_len]:
-        i = bisect(sorted_str_reps, next_code) - 1
-        idx += rep_lengths[i]
+    buffer_length = (len(max(sorted_str_reps, key=len)) // 8) + 1
+    sorted_int_reps = [
+        int(rep, 2) << (8 * buffer_length - len(rep)) for rep in sorted_str_reps
+    ]
+    assert sorted(sorted_int_reps) == sorted_int_reps
+    mask = (1 << (buffer_length * 8)) - 1
+    buffer = 0
+    used_bits = (buffer_length + 1) * 8
+    for next_byte in byte_arr[:-1]:
+        used_bits -= 8
+        buffer &= mask
+        buffer <<= 8
+        buffer |= next_byte
+        while used_bits <= 8:
+            i = bisect(sorted_int_reps, (buffer >> (8 - used_bits)) & mask) - 1
+            used_bits += rep_lengths[i]
+            yield chars[i]
+    while (buffer_length + 1) * 8 - used_bits != byte_arr[-1]:
+        i = bisect(sorted_int_reps, (buffer << (used_bits - 8)) & mask) - 1
+        used_bits += rep_lengths[i]
         yield chars[i]
 
 
@@ -106,7 +120,7 @@ if __name__ == "__main__":
     bin_text = read_bin_from_file()
     a = time()
     decoded = "".join(decode_yoav(bin_text, code))
-    assert decoded == text
+    assert decoded == text, dict(decoded=decoded, text=text)
     b = time()
     print(f"decode yoav: {b - a}")
     a = time()
