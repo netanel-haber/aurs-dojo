@@ -1,6 +1,10 @@
-from heapq import heapify, heappop, heappush
+from bisect import bisect
 from collections import Counter
-from .files import get_file, write_bin_to_file, read_bin_from_file
+from heapq import heapify, heappop, heappush
+from time import time
+from typing import Generator
+
+from .files import get_file, read_bin_from_file, write_bin_to_file
 from .node import Node
 
 
@@ -25,7 +29,7 @@ def code_from_tree(tree):
     char_to_str_repr = {}
 
     def crutch(node, rep):
-        if node.is_leaf():
+        if node.char:
             char_to_str_repr[node.char] = rep
             return
         crutch(node.left, rep + "0")
@@ -65,16 +69,30 @@ def hydrate_text(byte_arr):
     return string + last
 
 
-def decode(byte_arr: bytes, tree: Node):
+def decode(byte_arr: bytes, tree: Node) -> str:
     text = ""
     bin_text = hydrate_text(byte_arr)
     node = tree
     for bit in bin_text:
         node = node.left if bit == "0" else node.right
-        if node.is_leaf():
+        if node.char:
             text += node.char
             node = tree
     return text
+
+
+def decode_yoav(byte_arr: bytes, code: dict) -> Generator[str, None, None]:
+    str_rep_chars = sorted((v, k) for k, v in code.items())
+    sorted_str_reps = [pair[0] for pair in str_rep_chars]
+    rep_lengths = [len(rep) for rep in sorted_str_reps]
+    chars = [pair[1] for pair in str_rep_chars]
+    longest_str_rep_len = len(max(sorted_str_reps, key=len))
+    bin_text = hydrate_text(byte_arr)
+    idx = 0
+    while next_code := bin_text[idx : idx + longest_str_rep_len]:
+        i = bisect(sorted_str_reps, next_code) - 1
+        idx += rep_lengths[i]
+        yield chars[i]
 
 
 if __name__ == "__main__":
@@ -86,5 +104,13 @@ if __name__ == "__main__":
     encoded = encode(text, code)
     write_bin_to_file(encoded)
     bin_text = read_bin_from_file()
+    a = time()
+    decoded = "".join(decode_yoav(bin_text, code))
+    assert decoded == text
+    b = time()
+    print(f"decode yoav: {b - a}")
+    a = time()
     decoded = decode(bin_text, tree)
     assert decoded == text
+    b = time()
+    print(f"decode: {b - a}")
