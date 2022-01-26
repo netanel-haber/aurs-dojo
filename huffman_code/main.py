@@ -120,7 +120,7 @@ if __name__ == "__main__":
     bin_text = read_bin_from_file()
     a = time()
     decoded = "".join(decode_yoav(bin_text, code))
-    assert decoded == text, dict(decoded=decoded, text=text)
+    assert decoded == text
     b = time()
     print(f"decode yoav: {b - a}")
     a = time()
