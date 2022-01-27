@@ -8,8 +8,3 @@ class Node:
     char: Optional[str] = field(compare=False, default=None)
     left: Optional["Node"] = field(compare=False, default=None)
     right: Optional["Node"] = field(compare=False, default=None)
-    def is_leaf(self):
-        return self.char!=None
-      
-      
-    
