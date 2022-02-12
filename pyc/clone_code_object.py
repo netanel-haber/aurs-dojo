@@ -1,7 +1,7 @@
 from types import CodeType
 
 
-def augment_code_object(
+def clone_code_object(
     initial: CodeType, co_code: bytes, co_consts: tuple, co_names: tuple
 ) -> CodeType:
     return CodeType(
